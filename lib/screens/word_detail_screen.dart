@@ -3,8 +3,9 @@ import 'main_screen.dart';
 import 'search_screen.dart';
 import 'word_list_screen.dart';
 
+// WordDetailScreen: 단어의 상세 정보를 표시하는 화면
 class WordDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> word; // String에서 dynamic으로 변경
+  final Map<String, dynamic> word; // 단어 정보를 담은 Map
 
   const WordDetailScreen({Key? key, required this.word}) : super(key: key);
 
@@ -12,35 +13,34 @@ class WordDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('단어 찾기', style: TextStyle(color: Colors.white)), // 제목 변경
+        title: Text('단어 찾기', style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF8A7FBA),
         elevation: 0,
         leading: IconButton(
-          // 뒤로 가기 버튼 추가
+          // 뒤로 가기 버튼
           icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Container(
-        color: Color(0xFFF0F0FF),
+        color: Color(0xFFF0F0FF), // 배경색 설정
         child: Padding(
-          // Padding 추가
           padding: EdgeInsets.all(16),
           child: Column(
-            // ListView에서 Column으로 변경
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 단어 표시
               Text(
                 word['word'] ?? '',
                 style: TextStyle(
-                  fontSize: 28, // 폰트 크기 변경
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF5D4777),
                 ),
               ),
               SizedBox(height: 24),
+              // 단어 정의를 포함하는 컨테이너
               Container(
-                // 정의를 포함하는 컨테이너 추가
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -54,6 +54,7 @@ class WordDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                // 단어 정의 표시
                 child: Text(
                   word['definition'] ?? '',
                   style: TextStyle(
@@ -71,13 +72,14 @@ class WordDetailScreen extends StatelessWidget {
     );
   }
 
+  // 하단 네비게이션 바 구축 메서드
   Widget _buildBottomNavigationBar(BuildContext context) {
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       backgroundColor: Color(0xFF8A7FBA),
       selectedItemColor: Colors.white,
       unselectedItemColor: Color(0xFFD5D1EE),
-      currentIndex: 1,
+      currentIndex: 1, // '단어찾기' 탭이 선택된 상태
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: '단어찾기'),
@@ -86,6 +88,7 @@ class WordDetailScreen extends StatelessWidget {
       ],
       onTap: (index) {
         Widget screen;
+        // 선택된 탭에 따라 화면 전환
         switch (index) {
           case 0:
             screen = MainScreen();
@@ -99,6 +102,7 @@ class WordDetailScreen extends StatelessWidget {
           default:
             return;
         }
+        // 새로운 화면으로 이동하고 이전 화면들을 모두 제거
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => screen),

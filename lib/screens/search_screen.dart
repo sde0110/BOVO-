@@ -6,6 +6,7 @@ import 'word_detail_screen.dart';
 import 'flash_card_start_screen.dart';
 import 'word_list_screen.dart';
 
+// SearchScreen: 단어 검색 기능을 제공하는 화면
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);
 
@@ -27,6 +28,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _loadRecentSearches();
   }
 
+  // 모든 단어 데이터 로드
   Future<void> _loadWords() async {
     await WordData.loadWords();
     setState(() {
@@ -34,6 +36,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  // 최근 검색어 로드
   Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -41,6 +44,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  // 최근 검색어 저장 (최대 3개)
   Future<void> _saveRecentSearch(String search) async {
     if (!_recentSearches.contains(search)) {
       _recentSearches.insert(0, search);
@@ -52,6 +56,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  // 검색어에 따라 단어 필터링
   void _filterSearchResults(String query) {
     setState(() {
       _isSearching = query.isNotEmpty;
@@ -66,6 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  // 검색 결과 위젯 생성
   Widget _buildSearchResults() {
     if (_filteredWords.isEmpty) {
       return Center(
@@ -103,6 +109,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // 검색어 하이라이트를 위한 TextSpan 생성
   List<TextSpan> _buildTextSpans(String text, String query) {
     List<TextSpan> spans = [];
     int start = 0;
@@ -123,6 +130,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return spans;
   }
 
+  // 최근 검색어 목록 위젯 생성
   Widget _buildRecentSearches() {
     return _recentSearches.isEmpty
         ? _buildLogoSection()
@@ -141,6 +149,7 @@ class _SearchScreenState extends State<SearchScreen> {
           );
   }
 
+  // 로고 섹션 위젯 생성
   Widget _buildLogoSection() {
     return Center(
       child: Column(
@@ -159,6 +168,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  // 검색어 초기화
   void _clearSearch() {
     setState(() {
       _searchController.clear();
@@ -195,6 +205,7 @@ class _SearchScreenState extends State<SearchScreen> {
           color: Color(0xFFF0F0FF),
           child: Column(
             children: [
+              // 검색 입력 필드
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: TextField(
@@ -220,6 +231,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   },
                 ),
               ),
+              // 최근 검색어가 없을 때 메시지 표시
               if (_recentSearches.isEmpty)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -231,6 +243,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ),
+              // 검색 결과 또는 최근 검색어 목록 표시
               Expanded(
                 child: _isSearching
                     ? _buildSearchResults()
@@ -239,6 +252,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ],
           ),
         ),
+        // 하단 네비게이션 바
         bottomNavigationBar: BottomNavigationBar(
           type: BottomNavigationBarType.fixed,
           backgroundColor: Color(0xFF8A7FBA),

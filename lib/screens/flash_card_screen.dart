@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../word_data.dart';
 import 'dart:math';
 
+// FlashCardScreen: 선택된 카테고리의 단어를 플래시 카드 형식으로 학습하는 화면
 class FlashCardScreen extends StatefulWidget {
   final String category;
 
@@ -26,8 +27,8 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
   String displayedWord = '';
   String displayedMeaning = '';
 
-  final Color primaryColor = Color(0xFF9575CD); // 보라색 계열의 주 색상
-  final Color accentColor = Color(0xFFD1C4E9); // 보라색 계열의 강조 색상
+  final Color primaryColor = Color(0xFF9575CD);
+  final Color accentColor = Color(0xFFD1C4E9);
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     _loadCategoryWords();
   }
 
+  // 선택된 카테고리의 단어 로드
   Future<void> _loadCategoryWords() async {
     setState(() {
       isLoading = true;
@@ -49,6 +51,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     });
   }
 
+  // 랜덤으로 10개의 단어 선택
   List<Map<String, String>> _getRandomWords() {
     final random = Random();
     final tempList = List<Map<String, String>>.from(categoryWords);
@@ -56,6 +59,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     return tempList.take(10).toList();
   }
 
+  // 다음 카드로 이동
   void _nextCard() {
     setState(() {
       if (currentIndex < randomWords.length - 1) {
@@ -75,6 +79,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     });
   }
 
+  // 이전 카드로 이동
   void _previousCard() {
     setState(() {
       if (currentIndex > 0) {
@@ -88,12 +93,14 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     });
   }
 
+  // 단어 정의 표시/숨김 토글
   void _toggleDefinition() {
     setState(() {
       showDefinition = !showDefinition;
     });
   }
 
+  // 학습 완료 화면 표시
   void _showCompletionScreen() {
     showDialog(
       context: context,
@@ -135,6 +142,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     );
   }
 
+  // 퀴즈 모드 시작
   void _startQuiz() {
     setState(() {
       isQuizMode = true;
@@ -146,6 +154,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     });
   }
 
+  // 퀴즈 모드에서 단어와 뜻을 섞음
   void _shuffleWordAndMeaning() {
     var random = Random();
     var wordPair = randomWords[currentIndex];
@@ -167,6 +176,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     }
   }
 
+  // 퀴즈 답변 확인
   void _checkAnswer(bool userAnswer) {
     setState(() {
       isAnswered = true;
@@ -181,6 +191,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
     });
   }
 
+  // 퀴즈 결과 화면 표시
   void _showQuizResult() {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
@@ -199,6 +210,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // 점수 카드
                   Card(
                     elevation: 5,
                     shape: RoundedRectangleBorder(
@@ -242,6 +254,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                     ),
                   ),
                   SizedBox(height: 20),
+                  // 다시 학습하기 버튼
                   ElevatedButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -271,6 +284,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
+                  // 오답 리스트
                   Expanded(
                     child: ListView.builder(
                       itemCount: incorrectAnswers.length,
@@ -309,6 +323,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 로딩 중 화면
     if (isLoading) {
       return Scaffold(
         backgroundColor: accentColor,
@@ -320,6 +335,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
       );
     }
 
+    // 단어가 없을 때 화면
     if (categoryWords.isEmpty) {
       return Scaffold(
         appBar: AppBar(title: Text('#${widget.category}')),
@@ -327,6 +343,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
       );
     }
 
+    // 메인 플래시 카드 화면
     return Scaffold(
       backgroundColor: accentColor,
       appBar: AppBar(
@@ -348,6 +365,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 학습 모드 UI
               if (!isQuizMode) ...[
                 Expanded(
                   child: GestureDetector(
@@ -390,7 +408,9 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                     ),
                   ),
                 ),
-              ] else if (!isAnswered) ...[
+              ]
+              // 퀴즈 모드 UI (답변 전)
+              else if (!isAnswered) ...[
                 Text(
                   displayedWord,
                   style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
@@ -440,7 +460,9 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                     ),
                   ],
                 ),
-              ] else ...[
+              ]
+              // 퀴즈 모드 UI (답변 후)
+              else ...[
                 Text(
                   isCorrect ? '정답입니다!' : '오답입니다!',
                   style: TextStyle(

@@ -5,6 +5,7 @@ import 'word_list_screen.dart';
 import 'main_screen.dart';
 import '../word_data.dart';
 
+// FlashCardStartScreen: 플래시 카드 학습을 시작하는 화면
 class FlashCardStartScreen extends StatefulWidget {
   @override
   _FlashCardStartScreenState createState() => _FlashCardStartScreenState();
@@ -12,6 +13,7 @@ class FlashCardStartScreen extends StatefulWidget {
 
 class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
   List<Map<String, String>> todaysWords = [];
+  // 카테고리 정보 (이름과 아이콘)
   List<Map<String, dynamic>> categories = [
     {'name': '주택', 'icon': Icons.home},
     {'name': '아르바이트', 'icon': Icons.work},
@@ -25,6 +27,7 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
     _loadData();
   }
 
+  // 단어 데이터 로드
   Future<void> _loadData() async {
     await WordData.loadWords();
     setState(() {
@@ -50,6 +53,7 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 안내 메시지
             Padding(
               padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
               child: Text(
@@ -57,6 +61,7 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
+            // 카테고리 그리드
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
@@ -73,6 +78,7 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
           ],
         ),
       ),
+      // 하단 네비게이션 바
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Color(0xFF8A7FBA),
@@ -110,10 +116,12 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
     );
   }
 
+  // 카테고리 카드 위젯 생성
   Widget _buildCategoryCard(
       BuildContext context, IconData icon, String label, String category) {
     return GestureDetector(
       onTap: () {
+        // 카테고리 선택 시 해당 카테고리의 플래시 카드 화면으로 이동
         Navigator.push(
           context,
           MaterialPageRoute(

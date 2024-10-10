@@ -3,6 +3,7 @@ import 'dart:async';
 import 'main_screen.dart'; // MainScreen 위젯이 있는 파일을 import 해야 합니다.
 import '../word_data.dart'; // WordData import 추가
 
+// SplashScreen: 앱 시작 시 표시되는 로딩 화면
 class SplashScreen extends StatefulWidget {
   @override
   _SplashScreenState createState() => _SplashScreenState();
@@ -15,10 +16,12 @@ class _SplashScreenState extends State<SplashScreen> {
     _loadDataAndNavigate();
   }
 
+  // 데이터 로딩 및 메인 화면으로 이동하는 메서드
   Future<void> _loadDataAndNavigate() async {
     await WordData.loadWords(); // 단어 데이터 로딩
     await Future.delayed(Duration(seconds: 2)); // 최소 2초 대기
 
+    // 메인 화면으로 이동 (이전 화면 스택에서 제거)
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => MainScreen()),
     );
@@ -28,6 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        // 배경 그라데이션 설정
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -39,6 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // 로고 컨테이너
               Container(
                 width: 120,
                 height: 120,
@@ -66,6 +71,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               SizedBox(height: 24),
+              // 앱 설명 텍스트
               Text(
                 '사회초년생을 위한 보험용어사전',
                 style: TextStyle(
@@ -75,6 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
               SizedBox(height: 48),
+              // 로딩 인디케이터
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
               ),

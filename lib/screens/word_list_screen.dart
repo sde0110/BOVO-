@@ -6,6 +6,7 @@ import 'main_screen.dart';
 import 'search_screen.dart';
 import 'flash_card_start_screen.dart';
 
+// WordListScreen 위젯: 단어 목록을 표시하는 화면
 class WordListScreen extends StatefulWidget {
   const WordListScreen({Key? key}) : super(key: key);
 
@@ -20,7 +21,9 @@ class _WordListScreenState extends State<WordListScreen> {
   String? _pressedLetter;
   Timer? _hideTimer;
 
+  // 초성별로 그룹화된 단어 목록
   Map<String, List<Map<String, String>>> groupedWords = {};
+  // 한글 초성 목록
   final List<String> _alphabet = [
     'ㄱ',
     'ㄴ',
@@ -45,12 +48,14 @@ class _WordListScreenState extends State<WordListScreen> {
     _loadWords();
   }
 
+  // JSON 파일에서 단어 데이터를 로드하는 메서드
   Future<void> _loadWords() async {
     try {
       String jsonString = await rootBundle.loadString('assets/words.json');
       Map<String, dynamic> jsonResponse = json.decode(jsonString);
       List<Map<String, String>> allWords = [];
 
+      // JSON 데이터에서 단어와 정의를 추출
       jsonResponse['categories'].forEach((category) {
         category['words'].forEach((word) {
           allWords.add({
@@ -60,9 +65,11 @@ class _WordListScreenState extends State<WordListScreen> {
         });
       });
 
+      // 단어를 알파벳 순으로 정렬
       allWords.sort((a, b) => a['word']!.compareTo(b['word']!));
 
       setState(() {
+        // 초성별로 단어 그룹화
         groupedWords = _groupWordsByInitial(allWords);
       });
       print('단어 로드 완료: ${groupedWords.length} 그룹, ${allWords.length} 단어');
@@ -71,6 +78,7 @@ class _WordListScreenState extends State<WordListScreen> {
     }
   }
 
+  // 단어를 초성별로 그룹화하는 메서드
   Map<String, List<Map<String, String>>> _groupWordsByInitial(
       List<Map<String, String>> words) {
     Map<String, List<Map<String, String>>> grouped = {};
@@ -84,6 +92,7 @@ class _WordListScreenState extends State<WordListScreen> {
     return grouped;
   }
 
+  // 단어의 초성을 반환하는 메서드
   String _getInitialConsonant(String word) {
     final initialConsonants = [
       'ㄱ',
@@ -116,6 +125,7 @@ class _WordListScreenState extends State<WordListScreen> {
     }
   }
 
+  // 스크롤 이벤트 리스너
   void _scrollListener() {
     setState(() {
       _showAlphabetList = true;
@@ -130,6 +140,7 @@ class _WordListScreenState extends State<WordListScreen> {
     });
   }
 
+  // 특정 초성으로 스크롤하는 메서드
   void _scrollToLetter(String letter) {
     final keys = groupedWords.keys.toList();
     final index = keys.indexOf(letter);
@@ -171,6 +182,7 @@ class _WordListScreenState extends State<WordListScreen> {
         color: Color(0xFFF0F0FF),
         child: Stack(
           children: [
+            // 단어 목록을 표시하는 ListView
             ListView.builder(
               controller: _scrollController,
               itemCount: _alphabet.length,
@@ -180,6 +192,7 @@ class _WordListScreenState extends State<WordListScreen> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // 초성 헤더
                     Container(
                       padding: const EdgeInsets.all(12.0),
                       color: Color(0xFFD5D1EE),
@@ -192,6 +205,7 @@ class _WordListScreenState extends State<WordListScreen> {
                         ),
                       ),
                     ),
+                    // 단어 목록
                     ...words
                         .map((word) => CustomExpansionTile(
                               word: word['word']!,
@@ -209,6 +223,7 @@ class _WordListScreenState extends State<WordListScreen> {
                 );
               },
             ),
+            // 초성 빠른 이동 리스트
             if (_showAlphabetList)
               Positioned(
                 right: 0,
@@ -223,21 +238,7 @@ class _WordListScreenState extends State<WordListScreen> {
                   child: ListView(
                     children: groupedWords.keys
                         .map((letter) => GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _pressedLetter = letter;
-                                });
-
-                                final index =
-                                    groupedWords.keys.toList().indexOf(letter);
-                                if (index != -1) {
-                                  _scrollController.animateTo(
-                                    index * 50.0, // 예상되는 각 섹션의 높이
-                                    duration: Duration(milliseconds: 300),
-                                    curve: Curves.easeInOut,
-                                  );
-                                }
-                              },
+                              onTap: () => _scrollToLetter(letter),
                               child: Container(
                                 height: 40,
                                 alignment: Alignment.center,
@@ -266,6 +267,7 @@ class _WordListScreenState extends State<WordListScreen> {
           ],
         ),
       ),
+      // 하단 네비게이션 바
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: 3,
@@ -306,6 +308,7 @@ class _WordListScreenState extends State<WordListScreen> {
   }
 }
 
+// CustomExpansionTile 위젯: 확장 가능한 단어 타일
 class CustomExpansionTile extends StatelessWidget {
   final String word;
   final String definition;
