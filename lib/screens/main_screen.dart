@@ -71,7 +71,7 @@ class MainScreen extends StatelessWidget {
         icon: Icon(icon, size: 30, color: Colors.white),
         label: Text(
           label,
-          style: TextStyle(fontSize: 19, color: Colors.white),
+          style: TextStyle(fontSize: 20, color: Colors.white),
         ),
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
