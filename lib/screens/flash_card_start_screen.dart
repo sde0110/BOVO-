@@ -11,8 +11,8 @@ class FlashCardStartScreen extends StatefulWidget {
 }
 
 class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
-  List<Map<String, dynamic>> todaysWords = [];
-  final List<Map<String, dynamic>> categories = [
+  List<Map<String, String>> todaysWords = [];
+  List<Map<String, dynamic>> categories = [
     {'name': '주택', 'icon': Icons.home},
     {'name': '아르바이트', 'icon': Icons.work},
     {'name': '전자기기', 'icon': Icons.devices},
@@ -22,7 +22,14 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
   @override
   void initState() {
     super.initState();
-    todaysWords = WordData.getTodaysWords();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await WordData.loadWords();
+    setState(() {
+      todaysWords = WordData.getTodaysWords();
+    });
   }
 
   @override
