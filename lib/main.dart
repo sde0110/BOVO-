@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'word_data.dart';
-import 'screens/main_screen.dart';
+import 'screens/splash_screen.dart'; // SplashScreen import 추가
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
         primaryColor: Color(0xFF8A7FBA),
         scaffoldBackgroundColor: Color(0xFFF0F0FF),
       ),
-      home: MainScreen(),
+      home: SplashScreen(), // MainScreen 대신 SplashScreen으로 변경
     );
   }
 }

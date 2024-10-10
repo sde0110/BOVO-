@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'main_screen.dart'; // MainScreen 위젯이 있는 파일을 import 해야 합니다.
+import '../word_data.dart'; // WordData import 추가
 
 class SplashScreen extends StatefulWidget {
   @override
@@ -11,11 +12,16 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => MainScreen()),
-      );
-    });
+    _loadDataAndNavigate();
+  }
+
+  Future<void> _loadDataAndNavigate() async {
+    await WordData.loadWords(); // 단어 데이터 로딩
+    await Future.delayed(Duration(seconds: 2)); // 최소 2초 대기
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => MainScreen()),
+    );
   }
 
   @override
@@ -61,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
               SizedBox(height: 24),
               Text(
-                '보험 용어 학습 도우미',
+                '사회초년생을 위한 보험용어사전',
                 style: TextStyle(
                   fontSize: 18,
                   color: Colors.white,
