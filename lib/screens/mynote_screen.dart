@@ -3,13 +3,13 @@ import 'main_screen.dart';
 import 'search_screen.dart';
 import 'word_list_screen.dart';
 import 'flash_card_start_screen.dart';
-
-import 'package:flutter/material.dart';
 import 'package:bovo/utils/favorite_utils.dart';
 import 'package:bovo/utils/wrong_answer_utils.dart';
 
 class MyNoteScreen extends StatefulWidget {
-  const MyNoteScreen({Key? key}) : super(key: key);
+  final int initialTab;
+
+  const MyNoteScreen({Key? key, this.initialTab = 0}) : super(key: key);
 
   @override
   _MyNoteScreenState createState() => _MyNoteScreenState();
@@ -23,13 +23,15 @@ class _MyNoteScreenState extends State<MyNoteScreen>
   final WrongAnswerUtils wrongAnswerUtils = WrongAnswerUtils();
   late TabController _tabController;
   String? _expandedWord;
+  Map<String, dynamic> _wrongAnswers = {};
 
   @override
   void initState() {
     super.initState();
     _loadFavoriteWords();
     _loadWrongAnswers();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController =
+        TabController(length: 2, vsync: this, initialIndex: widget.initialTab);
   }
 
   Future<void> _loadFavoriteWords() async {
@@ -41,11 +43,10 @@ class _MyNoteScreenState extends State<MyNoteScreen>
 
   Future<void> _loadWrongAnswers() async {
     try {
-      final wrongAnswers = await wrongAnswerUtils.getWrongAnswersByRound();
+      final wrongAnswers = await wrongAnswerUtils.getWrongAnswers();
       setState(() {
-        _wrongAnswersByRound = wrongAnswers;
+        _wrongAnswers = wrongAnswers;
       });
-      print('로드된 오답: $_wrongAnswersByRound'); // 디버깅용 출력
     } catch (e) {
       print('오답 로드 중 오류 발생: $e');
     }
@@ -137,21 +138,25 @@ class _MyNoteScreenState extends State<MyNoteScreen>
   }
 
   Widget _buildWrongAnswersList() {
+    List<MapEntry<String, dynamic>> sortedWrongAnswers = _wrongAnswers.entries
+        .toList()
+      ..sort((a, b) =>
+          (b.value['count'] as int).compareTo(a.value['count'] as int));
+
     return Container(
       color: Colors.white,
-      child: _wrongAnswersByRound.isEmpty
+      child: sortedWrongAnswers.isEmpty
           ? Center(
               child: Text(
-                '오답이 없습니다.',
+                '오답이 없습니다. 퀴즈를 풀어보세요!',
                 style: TextStyle(color: Color(0xFF1E3859), fontSize: 16),
               ),
             )
           : ListView.builder(
-              itemCount: _wrongAnswersByRound.length,
+              itemCount: sortedWrongAnswers.length,
               itemBuilder: (context, index) {
-                int round = _wrongAnswersByRound.keys.toList()[index];
-                List<Map<String, String>> wrongAnswers =
-                    _wrongAnswersByRound[round]!;
+                String word = sortedWrongAnswers[index].key;
+                dynamic wordData = sortedWrongAnswers[index].value;
                 return Card(
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   color: Colors.white,
@@ -160,27 +165,38 @@ class _MyNoteScreenState extends State<MyNoteScreen>
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(color: Color(0xFF1E3859), width: 1),
                   ),
-                  child: ExpansionTile(
+                  child: ListTile(
                     title: Text(
-                      '회차 $round',
+                      word,
                       style: TextStyle(
                         color: Color(0xFF1E3859),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    children: wrongAnswers
-                        .map((wrongAnswer) => ListTile(
-                              title: Text(
-                                wrongAnswer['word'] ?? '',
-                                style: TextStyle(color: Color(0xFF1E3859)),
-                              ),
-                              subtitle: Text(
-                                wrongAnswer['definition'] ?? '',
-                                style: TextStyle(
-                                    color: Color(0xFF1E3859).withOpacity(0.7)),
-                              ),
-                            ))
-                        .toList(),
+                    subtitle: Text(
+                      wordData['definition'],
+                      style:
+                          TextStyle(color: Color(0xFF1E3859).withOpacity(0.7)),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${wordData['count']}회',
+                          style: TextStyle(
+                            color: Color(0xFF1E3859),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Color(0xFF1E3859)),
+                          onPressed: () async {
+                            await wrongAnswerUtils.removeWrongAnswer(word);
+                            await _loadWrongAnswers();
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },

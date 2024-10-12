@@ -248,9 +248,11 @@ class _SearchScreenState extends State<SearchScreen> {
         backgroundColor: primaryColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.white), // 아이콘 색상을 흰색으로 변경
+          icon: Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
-            Navigator.of(context).pop();
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => MainScreen()),
+            );
           },
         ),
         title: Text(''),

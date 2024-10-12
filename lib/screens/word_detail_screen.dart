@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'main_screen.dart';
-import 'search_screen.dart';
-import 'word_list_screen.dart';
 
 // WordDetailScreen: 단어의 상세 정보를 표시하는 화면
 class WordDetailScreen extends StatelessWidget {

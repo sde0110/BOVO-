@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../word_data.dart';
 import 'dart:math';
+import '../utils/wrong_answer_utils.dart';
+import 'mynote_screen.dart'; // MyNoteScreen import 추가
 
 // 선택된 카테고리의 단어를 플래시 카드 형식으로 학습하는 화면
 class FlashCardScreen extends StatefulWidget {
@@ -28,7 +30,7 @@ class _FlashCardScreenState extends State<FlashCardScreen>
   int score = 0;
   String displayedWord = '';
   String displayedMeaning = '';
-  late List<Map<String, dynamic>> currentWordSet; // 현재 학습 중인 단어 세트
+  late List<Map<String, dynamic>> currentWordSet; // 현재 학 중인 단어 세트
 
   late AnimationController _scaleController;
   late AnimationController _fadeController;
@@ -42,6 +44,8 @@ class _FlashCardScreenState extends State<FlashCardScreen>
   final Color accentColor = Color(0xFFF0F4F8);
   final Color correctColor = Color.fromARGB(142, 172, 255, 174);
   final Color incorrectColor = Color.fromARGB(168, 255, 181, 176);
+
+  final WrongAnswerUtils wrongAnswerUtils = WrongAnswerUtils();
 
   @override
   void initState() {
@@ -153,7 +157,7 @@ class _FlashCardScreenState extends State<FlashCardScreen>
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('수고하셨습니다!'),
+          backgroundColor: Colors.white, // 배경색을 흰색으로 설정
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -246,8 +250,17 @@ class _FlashCardScreenState extends State<FlashCardScreen>
       isCorrect = (userAnswer == isShuffled);
       if (isCorrect) {
         score += 10;
+        print('정답: ${quizWords[currentIndex]['word']}'); // 정답인 경우 출력
+        // 정답인 경우 오답 카���트 감소
+        wrongAnswerUtils
+            .decreaseWrongAnswerCount(quizWords[currentIndex]['word']);
       } else {
         incorrectAnswers.add(quizWords[currentIndex]);
+        print('오답: ${quizWords[currentIndex]['word']}'); // 오답인 경우 출력
+        wrongAnswerUtils.addWrongAnswer({
+          'word': quizWords[currentIndex]['word']!,
+          'definition': quizWords[currentIndex]['definition']!,
+        });
       }
 
       _showResultPopup();
@@ -405,16 +418,20 @@ class _FlashCardScreenState extends State<FlashCardScreen>
                       child: Text('오답노트 확인하기',
                           style: TextStyle(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            backgroundColor, // primary를 backgroundColor로 변경
+                        backgroundColor: backgroundColor,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                       ),
                       onPressed: () {
-                        // 오답노트 확인 로직 구현
                         Navigator.of(context).pop();
                         // 오답노트 화면으로 이동하는 코드 추가
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => MyNoteScreen(initialTab: 1),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -426,8 +443,7 @@ class _FlashCardScreenState extends State<FlashCardScreen>
                       child: Text('단어학습 다시하기',
                           style: TextStyle(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            backgroundColor, // primary를 backgroundColor로 변경
+                        backgroundColor: backgroundColor,
                         padding: EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
