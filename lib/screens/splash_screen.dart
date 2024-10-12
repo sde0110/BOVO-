@@ -5,6 +5,8 @@ import '../word_data.dart'; // WordData import 추가
 
 // SplashScreen: 앱 시작 시 표시되는 로딩 화면
 class SplashScreen extends StatefulWidget {
+  const SplashScreen({Key? key}) : super(key: key);
+
   @override
   _SplashScreenState createState() => _SplashScreenState();
 }
@@ -19,9 +21,9 @@ class _SplashScreenState extends State<SplashScreen> {
   // 데이터 로딩 및 메인 화면으로 이동하는 메서드
   Future<void> _loadDataAndNavigate() async {
     await WordData.loadWords(); // 단어 데이터 로딩
-    await Future.delayed(Duration(seconds: 2)); // 최소 2초 대기
+    await Future.delayed(const Duration(seconds: 2)); // 최소 2초 대기
 
-    // 메인 화면으로 이동 (이전 화면 스택에서 제거)
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => MainScreen()),
     );
@@ -30,64 +32,54 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        // 배경 그라데이션 설정
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF8A7FBA), Color(0xFFD5D1EE)],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+      body: Stack(
+        children: [
+          Column(
             children: [
-              // 로고 컨테이너
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 5,
-                      blurRadius: 15,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    'BOVO',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF8A7FBA),
-                    ),
-                  ),
-                ),
+              Expanded(
+                flex: 1,
+                child: Container(color: Colors.white),
               ),
-              SizedBox(height: 24),
-              // 앱 설명 텍스트
-              Text(
-                '사회초년생을 위한 보험용어사전',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 48),
-              // 로딩 인디케이터
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              Expanded(
+                flex: 1,
+                child: Container(color: const Color(0xFF1E3859)),
               ),
             ],
           ),
-        ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Column(
+                  children: [
+                    Text(
+                      '사회초년생들을 위한',
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3859),
+                      ),
+                    ),
+                    Text(
+                      '보험용어사전',
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3859),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20), // 텍스트와 로고 사이의 간격
+                Image.asset(
+                  'assets/Icon/logo.png',
+                  width: 300,
+                  height: 300,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

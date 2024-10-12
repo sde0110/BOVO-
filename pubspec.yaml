@@ -92,3 +92,4 @@ flutter:
 
   assets:
     - assets/words.json
+    - assets/Icon/
