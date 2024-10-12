@@ -93,3 +93,8 @@ flutter:
   assets:
     - assets/words.json
     - assets/Icon/
+
+  fonts:
+    - family: Bovo
+      fonts:
+        - asset: assets/Icon/bovo_font.ttf

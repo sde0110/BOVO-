@@ -14,9 +14,9 @@ class FlashCardScreen extends StatefulWidget {
 
 class _FlashCardScreenState extends State<FlashCardScreen>
     with TickerProviderStateMixin {
-  List<Map<String, String>> categoryWords = [];
-  List<Map<String, String>> quizWords = [];
-  List<Map<String, String>> originalQuizWords = []; // 원래 선택된 10개 단어 저장
+  late List<Map<String, dynamic>> categoryWords;
+  late List<Map<String, dynamic>> quizWords;
+  late List<Map<String, dynamic>> originalQuizWords; // 원래 선택된 10개 단어 저장
   bool isLoading = true;
   int currentIndex = 0;
   bool showDefinition = false;
@@ -24,11 +24,11 @@ class _FlashCardScreenState extends State<FlashCardScreen>
   bool isAnswered = false;
   bool isCorrect = false;
   bool isShuffled = false;
-  List<Map<String, String>> incorrectAnswers = [];
+  late List<Map<String, dynamic>> incorrectAnswers;
   int score = 0;
   String displayedWord = '';
   String displayedMeaning = '';
-  List<Map<String, String>> currentWordSet = []; // 현재 학습 중인 단어 세트
+  late List<Map<String, dynamic>> currentWordSet; // 현재 학습 중인 단어 세트
 
   late AnimationController _scaleController;
   late AnimationController _fadeController;
@@ -91,9 +91,9 @@ class _FlashCardScreenState extends State<FlashCardScreen>
   }
 
   // 랜덤으로 10개의 단어 선택
-  List<Map<String, String>> _getRandomWords() {
+  List<Map<String, dynamic>> _getRandomWords() {
     final random = Random();
-    final tempList = List<Map<String, String>>.from(categoryWords);
+    final tempList = List<Map<String, dynamic>>.from(categoryWords);
     tempList.shuffle(random);
     return tempList.take(10).toList();
   }
@@ -230,6 +230,7 @@ class _FlashCardScreenState extends State<FlashCardScreen>
       List<String> incorrectMeanings = quizWords
           .where((w) => w['word'] != wordPair['word'])
           .map((w) => w['definition']!)
+          .cast<String>()
           .toList();
       displayedWord = wordPair['word']!;
       displayedMeaning =
@@ -699,5 +700,17 @@ class _FlashCardScreenState extends State<FlashCardScreen>
         minimumSize: Size(120, 60), // 버튼의 최소 크기 설정
       ),
     );
+  }
+
+  List<String> _getRandomDefinitions(Map<String, dynamic> currentWord) {
+    List<String> definitions = quizWords
+        .where((word) => word['word'] != currentWord['word'])
+        .map((word) => word['definition'] as String)
+        .toList();
+    definitions.shuffle();
+    definitions = definitions.take(3).toList();
+    definitions.add(currentWord['definition'] as String);
+    definitions.shuffle();
+    return definitions;
   }
 }

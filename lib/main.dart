@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       // 앱의 제목 설정
-      title: 'BOVO',
+      title: 'BOVO App',
 
       // 앱의 테마 설정
       theme: ThemeData(
@@ -28,6 +28,13 @@ class MyApp extends StatelessWidget {
         primaryColor: Color(0xFF8A7FBA),
         // 배경색을 연한 보라색으로 설정
         scaffoldBackgroundColor: Color(0xFFF0F0FF),
+        fontFamily: 'Bovo', // 여기서 기본 폰트를 설정합니다.
+        textTheme: Theme.of(context).textTheme.apply(
+              fontFamily: 'Bovo',
+            ),
+        primaryTextTheme: Theme.of(context).textTheme.apply(
+              fontFamily: 'Bovo',
+            ),
       ),
 
       // 시작 화면을 SplashScreen으로 설정

@@ -6,124 +6,117 @@ import 'word_list_screen.dart';
 // WordDetailScreen: 단어의 상세 정보를 표시하는 화면
 class WordDetailScreen extends StatelessWidget {
   final Map<String, dynamic> word; // 단어 정보를 담은 Map
+  final Color primaryColor = const Color(0xFF1E3859);
 
   const WordDetailScreen({Key? key, required this.word}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('단어 찾기', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF8A7FBA),
+        title: Text('', style: TextStyle(color: Color(0xFF1E3859))),
+        backgroundColor: primaryColor,
         elevation: 0,
-        leading: IconButton(
-          // 뒤로 가기 버튼
-          icon: Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        iconTheme: IconThemeData(color: Colors.white),
       ),
-      body: Container(
-        color: Color(0xFFF0F0FF), // 배경색 설정
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 단어 표시
-              Text(
-                word['word'] ?? '',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D4777),
-                ),
-              ),
-              SizedBox(height: 24),
-              // 단어 정의를 포함하는 컨테이너
-              Container(
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              color: primaryColor,
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.1),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: Offset(0, 2),
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 5),
                     ),
                   ],
                 ),
-                // 단어 정의 표시
                 child: Text(
-                  word['definition'] ?? '',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFF6A5495),
-                    height: 1.5,
-                  ),
+                  word['word'] ?? '',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              if (word['example1']?.isNotEmpty ?? false)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '예문 1:',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF5D4777)),
-                    ),
-                    Text(
-                      word['example1'] ?? '',
-                      style: TextStyle(fontSize: 18, color: Color(0xFF5D4777)),
-                    ),
-                  ],
-                ),
-              // 예문 2도 유사한 구조
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle('정의'),
+                  const SizedBox(height: 16),
+                  _buildContentCard(word['definition'] ?? ''),
+                  const SizedBox(height: 32),
+                  _buildExampleSection('예문 1', word['example1']),
+                  _buildExampleSection('예문 2', word['example2']),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(context),
+      // 네비게이션 바 제거
     );
   }
 
-  // 하단 네비게이션 바 구축 메서드
-  Widget _buildBottomNavigationBar(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Color(0xFF8A7FBA),
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Color(0xFFD5D1EE),
-      currentIndex: 1, // '단어찾기' 탭이 선택된 상태
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: '단어찾기'),
-        BottomNavigationBarItem(icon: Icon(Icons.flash_on), label: '오늘단어'),
-        BottomNavigationBarItem(icon: Icon(Icons.book), label: '단어목록'),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        color: primaryColor,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  Widget _buildContentCard(String content) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Text(
+        content,
+        style: TextStyle(
+            color: primaryColor.withOpacity(0.8), fontSize: 16, height: 1.5),
+      ),
+    );
+  }
+
+  Widget _buildExampleSection(String title, String? example) {
+    if (example == null || example.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(title),
+        const SizedBox(height: 16),
+        _buildContentCard(example),
+        const SizedBox(height: 32),
       ],
-      onTap: (index) {
-        Widget screen;
-        // 선택된 탭에 따라 화면 전환
-        switch (index) {
-          case 0:
-            screen = MainScreen();
-            break;
-          case 1:
-            screen = SearchScreen();
-            break;
-          case 3:
-            screen = WordListScreen();
-            break;
-          default:
-            return;
-        }
-        // 새로운 화면으로 이동하고 이전 화면들을 모두 제거
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => screen),
-          (Route<dynamic> route) => false,
-        );
-      },
     );
   }
 }

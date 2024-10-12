@@ -6,6 +6,7 @@ import 'word_detail_screen.dart';
 import 'flash_card_start_screen.dart';
 import 'word_list_screen.dart';
 import 'mynote_screen.dart';
+import 'package:bovo/utils/favorite_utils.dart';
 
 // SearchScreen: 단어 검색 기능을 제공하는 화면
 class SearchScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>> _filteredWords = [];
   List<String> _recentSearches = [];
   bool _isSearching = false;
+  Set<String> _favorites = <String>{};
 
   final Color primaryColor = Color(0xFF1E3859);
 
@@ -29,6 +31,7 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _loadWords();
     _loadRecentSearches();
+    _loadFavorites();
   }
 
   // 모든 단어 데이터 로드
@@ -59,14 +62,16 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // 검색어에 따라 단어 필터링
+  // 검색어에 따라 단어 필터링 (중복 제거 로직 추가)
   void _filterSearchResults(String query) {
     setState(() {
       _isSearching = query.isNotEmpty;
       if (_isSearching) {
+        Set<String> uniqueWords = {}; // 중복 제거를 위한 Set
         _filteredWords = _allWords
             .where((word) =>
                 word['word']!.toLowerCase().contains(query.toLowerCase()))
+            .where((word) => uniqueWords.add(word['word']!)) // 중복 단어 제거
             .toList();
       } else {
         _filteredWords = [];
@@ -109,8 +114,23 @@ class _SearchScreenState extends State<SearchScreen> {
                   children: _buildTextSpans(wordText, query),
                 ),
               ),
-              trailing:
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      _favorites.contains(wordText)
+                          ? Icons.star
+                          : Icons.star_border,
+                      color: _favorites.contains(wordText)
+                          ? Colors.amber
+                          : primaryColor,
+                    ),
+                    onPressed: () => _toggleFavorite(wordText),
+                  ),
                   Icon(Icons.arrow_forward_ios, color: primaryColor, size: 18),
+                ],
+              ),
               onTap: () {
                 _saveRecentSearch(wordText);
                 Navigator.push(
@@ -208,15 +228,27 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  Future<void> _loadFavorites() async {
+    final favorites = await FavoriteUtils.getFavorites();
+    setState(() {
+      _favorites = Set<String>.from(favorites);
+    });
+  }
+
+  Future<void> _toggleFavorite(String word) async {
+    await FavoriteUtils.toggleFavorite(word);
+    await _loadFavorites();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: primaryColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: primaryColor),
+          icon: Icon(Icons.arrow_back, color: Colors.white), // 아이콘 색상을 흰색으로 변경
           onPressed: () {
             Navigator.of(context).pop();
           },
@@ -268,7 +300,8 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
           Expanded(
-            child: _isSearching ? _buildSearchResults() : _buildLogoSection(),
+            child:
+                _isSearching ? _buildSearchResults() : _buildRecentSearches(),
           ),
         ],
       ),

@@ -6,6 +6,7 @@ import 'main_screen.dart';
 import 'search_screen.dart';
 import 'flash_card_start_screen.dart';
 import 'mynote_screen.dart';
+import 'package:bovo/utils/favorite_utils.dart';
 
 // WordListScreen 위젯: 단어 목록을 표시하는 화면
 class WordListScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _WordListScreenState extends State<WordListScreen> {
   String? _pressedLetter;
   Map<String, double> _letterPositions = {};
   Map<String, GlobalKey> letterKeys = {};
+  List<String> _favoriteWords = [];
 
   // 초성별로 그룹화된 단어 목록
   Map<String, List<Map<String, String>>> groupedWords = {};
@@ -47,6 +49,7 @@ class _WordListScreenState extends State<WordListScreen> {
     super.initState();
     _loadWords();
     _initLetterKeys();
+    _loadFavoriteWords();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _updateLetterPositions();
     });
@@ -62,6 +65,13 @@ class _WordListScreenState extends State<WordListScreen> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadFavoriteWords() async {
+    final words = await FavoriteUtils.getFavorites();
+    setState(() {
+      _favoriteWords = words;
+    });
   }
 
   void _updateLetterPositions() {
@@ -80,7 +90,7 @@ class _WordListScreenState extends State<WordListScreen> {
   }
 
   void _scrollToLetter(String letter) {
-    _updateLetterPositions(); // 스크롤하기 전에 위치 업데이트
+    _updateLetterPositions();
     final targetPosition = _letterPositions[letter];
     if (targetPosition != null) {
       _scrollController.animateTo(
@@ -183,11 +193,20 @@ class _WordListScreenState extends State<WordListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(0),
-        child: AppBar(
-          backgroundColor: Color(0xFF1E3859),
-          elevation: 0,
+      appBar: AppBar(
+        backgroundColor: Color(0xFF1E3859),
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => MainScreen()),
+            );
+          },
+        ),
+        title: Text(
+          '',
+          style: TextStyle(color: Colors.white),
         ),
       ),
       body: Container(
@@ -228,11 +247,17 @@ class _WordListScreenState extends State<WordListScreen> {
                               word: word['word']!,
                               definition: word['definition']!,
                               isExpanded: word['word'] == _expandedWord,
+                              isFavorite: _favoriteWords.contains(word['word']),
                               onExpansionChanged: (expanded) {
                                 setState(() {
                                   _expandedWord =
                                       expanded ? word['word'] : null;
                                 });
+                              },
+                              onFavoriteChanged: () async {
+                                await FavoriteUtils.toggleFavorite(
+                                    word['word']!);
+                                await _loadFavoriteWords();
                               },
                             )),
                     ],
@@ -363,14 +388,18 @@ class CustomExpansionTile extends StatelessWidget {
   final String word;
   final String definition;
   final bool isExpanded;
+  final bool isFavorite;
   final ValueChanged<bool> onExpansionChanged;
+  final VoidCallback onFavoriteChanged;
 
   const CustomExpansionTile({
     Key? key,
     required this.word,
     required this.definition,
     required this.isExpanded,
+    required this.isFavorite,
     required this.onExpansionChanged,
+    required this.onFavoriteChanged,
   }) : super(key: key);
 
   @override
@@ -391,9 +420,21 @@ class CustomExpansionTile extends StatelessWidget {
                 color: Color(0xFF1E3859),
               ),
             ),
-            trailing: Icon(
-              isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Color(0xFF1E3859),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.star : Icons.star_border,
+                    color: isFavorite ? Colors.yellow : Colors.grey,
+                  ),
+                  onPressed: onFavoriteChanged,
+                ),
+                Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: Color(0xFF1E3859),
+                ),
+              ],
             ),
             onTap: () => onExpansionChanged(!isExpanded),
           ),

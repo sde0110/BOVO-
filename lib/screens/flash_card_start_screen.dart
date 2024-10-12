@@ -13,7 +13,7 @@ class FlashCardStartScreen extends StatefulWidget {
 }
 
 class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
-  List<Map<String, String>> todaysWords = [];
+  late List<Map<String, dynamic>> todaysWords; // String을 dynamic으로 변경
   // 카테고리 정보 (이름과 아이콘 경로)
   List<Map<String, dynamic>> categories = [
     {'name': '주택', 'icon': 'assets/Icon/jutaek.png'},
@@ -25,6 +25,7 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
   @override
   void initState() {
     super.initState();
+    todaysWords = WordData.getTodaysWords(); // 타입 캐스팅 제거
     _loadData();
   }
 
