@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'main_screen.dart';
 import 'search_screen.dart';
 import 'flash_card_start_screen.dart';
+import 'mynote_screen.dart';
 
 // WordListScreen 위젯: 단어 목록을 표시하는 화면
 class WordListScreen extends StatefulWidget {
@@ -16,10 +17,10 @@ class WordListScreen extends StatefulWidget {
 
 class _WordListScreenState extends State<WordListScreen> {
   final ScrollController _scrollController = ScrollController();
-  bool _showAlphabetList = false;
   String? _expandedWord;
   String? _pressedLetter;
-  Timer? _hideTimer;
+  Map<String, double> _letterPositions = {};
+  Map<String, GlobalKey> letterKeys = {};
 
   // 초성별로 그룹화된 단어 목록
   Map<String, List<Map<String, String>>> groupedWords = {};
@@ -41,23 +42,65 @@ class _WordListScreenState extends State<WordListScreen> {
     'ㅎ'
   ];
 
-  // 각 그룹의 시작 위치를 저장하는 맵
-  Map<String, double> _letterPositions = {};
-
-  Map<String, GlobalKey> _letterKeys = {};
-
-  Map<String, double> _letterOffsets = {};
-
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_scrollListener);
     _loadWords();
-    for (var letter in _alphabet) {
-      _letterKeys[letter] = GlobalKey();
+    _initLetterKeys();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateLetterPositions();
+    });
+  }
+
+  void _initLetterKeys() {
+    for (final letter in _alphabet) {
+      letterKeys[letter] = GlobalKey();
     }
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _calculateLetterOffsets());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _updateLetterPositions() {
+    for (final letter in _alphabet) {
+      final RenderBox? renderBox = _getLetterRenderBox(letter);
+      if (renderBox != null) {
+        final position = renderBox.localToGlobal(Offset.zero);
+        _letterPositions[letter] = position.dy;
+      }
+    }
+  }
+
+  RenderBox? _getLetterRenderBox(String letter) {
+    final context = letterKeys[letter]?.currentContext;
+    return context?.findRenderObject() as RenderBox?;
+  }
+
+  void _scrollToLetter(String letter) {
+    _updateLetterPositions(); // 스크롤하기 전에 위치 업데이트
+    final targetPosition = _letterPositions[letter];
+    if (targetPosition != null) {
+      _scrollController.animateTo(
+        targetPosition - MediaQuery.of(context).padding.top,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+
+    setState(() {
+      _pressedLetter = letter;
+    });
+
+    Future.delayed(Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _pressedLetter = null;
+        });
+      }
+    });
   }
 
   // JSON 파일에서 단어 데이터를 로드하는 메서드
@@ -137,115 +180,49 @@ class _WordListScreenState extends State<WordListScreen> {
     }
   }
 
-  // 스크롤 이벤트 리스너
-  void _scrollListener() {
-    setState(() {
-      _showAlphabetList = true;
-    });
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _showAlphabetList = false;
-        });
-      }
-    });
-  }
-
-  // 특정 초성으로 스크롤하는 메서드
-  void _scrollToLetter(String letter) {
-    if (_letterOffsets.containsKey(letter)) {
-      double offset = _letterOffsets[letter]! -
-          MediaQuery.of(context).padding.top -
-          kToolbarHeight;
-      _scrollController.animateTo(
-        offset,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
-    }
-
-    setState(() {
-      _showAlphabetList = true;
-      _pressedLetter = letter;
-    });
-
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _showAlphabetList = false;
-          _pressedLetter = null;
-        });
-      }
-    });
-  }
-
-  // 각 그룹의 시작 위치를 계산하는 메서드
-  void _calculateLetterPositions() {
-    double currentPosition = 0;
-    for (String letter in groupedWords.keys) {
-      _letterPositions[letter] = currentPosition;
-      // 그룹 헤더의 높이 (예: 40)와 각 단어 항목의 높이 (예: 60)를 고려하여 계산
-      currentPosition += 40 + (groupedWords[letter]?.length ?? 0) * 60;
-    }
-  }
-
-  void _calculateLetterOffsets() {
-    for (String letter in _alphabet) {
-      final RenderObject? renderObject =
-          _letterKeys[letter]?.currentContext?.findRenderObject();
-      if (renderObject is RenderBox) {
-        final position = renderObject.localToGlobal(Offset.zero);
-        _letterOffsets[letter] = position.dy;
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('단어 목록', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF8A7FBA),
-        elevation: 0,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(0),
+        child: AppBar(
+          backgroundColor: Color(0xFF1E3859),
+          elevation: 0,
+        ),
       ),
-      body: NotificationListener<ScrollNotification>(
-        onNotification: (scrollNotification) {
-          if (scrollNotification is ScrollUpdateNotification) {
-            _calculateLetterOffsets();
-          }
-          return true;
-        },
-        child: Container(
-          color: Color(0xFFF0F0FF),
-          child: Stack(
-            children: [
-              // 단어 목록을 표시하는 ListView
-              ListView.builder(
+      body: Container(
+        color: Color(0xFF1E3859),
+        child: Stack(
+          children: [
+            NotificationListener<ScrollNotification>(
+              onNotification: (scrollNotification) {
+                if (scrollNotification is ScrollEndNotification) {
+                  _updateLetterPositions();
+                }
+                return true;
+              },
+              child: ListView.builder(
                 controller: _scrollController,
                 itemCount: _alphabet.length,
                 itemBuilder: (context, index) {
                   final letter = _alphabet[index];
                   final words = groupedWords[letter] ?? [];
                   return Column(
-                    key: _letterKeys[letter],
+                    key: letterKeys[letter],
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 초성 헤더 (항상 표시)
                       Container(
                         padding: const EdgeInsets.all(12.0),
-                        color: Color(0xFFD5D1EE),
+                        color: Colors.white.withOpacity(0.1),
                         child: Text(
                           letter,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Color(0xFF5D4777),
+                            color: Colors.white,
                           ),
                         ),
                       ),
-                      // 단어 목록 (단어가 있는 경우에만 표시)
                       if (words.isNotEmpty)
                         ...words.map((word) => CustomExpansionTile(
                               word: word['word']!,
@@ -262,87 +239,120 @@ class _WordListScreenState extends State<WordListScreen> {
                   );
                 },
               ),
-              // 초성 빠른 이동 리스트
-              if (_showAlphabetList)
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: Color(0xFFB3ADE0).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: ListView(
-                      children: _alphabet
-                          .map((letter) => GestureDetector(
-                                onTap: () => _scrollToLetter(letter),
-                                child: Container(
-                                  height: 40,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    letter,
-                                    style: TextStyle(
-                                      color: _pressedLetter == letter
-                                          ? Colors.white
-                                          : Color(0xFF6A5495),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: _pressedLetter == letter
-                                        ? Color(0xFF8A7FBA)
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
+            ),
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Color(0xFF1E3859).withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-            ],
-          ),
+                child: ListView(
+                  children: _alphabet
+                      .map((letter) => GestureDetector(
+                            onTap: () => _scrollToLetter(letter),
+                            child: Container(
+                              height: 40,
+                              alignment: Alignment.center,
+                              child: Text(
+                                letter,
+                                style: TextStyle(
+                                  color: _pressedLetter == letter
+                                      ? Color(0xFF1E3859)
+                                      : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              decoration: BoxDecoration(
+                                color: _pressedLetter == letter
+                                    ? Colors.white.withOpacity(0.8)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       // 하단 네비게이션 바
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 3,
-        backgroundColor: Color(0xFF8A7FBA),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Color(0xFFD5D1EE),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: '단어찾기'),
-          BottomNavigationBarItem(icon: Icon(Icons.flash_on), label: '오늘단어'),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: '단어목록'),
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: Offset(0, -3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavBarItem(
+                'assets/Icon/home.png',
+                '홈',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => MainScreen()))),
+            _buildNavBarItem(
+                'assets/Icon/search_navi.png',
+                '검색',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => SearchScreen()))),
+            _buildNavBarItem('assets/Icon/word_list.png', '단어목록', null),
+            _buildNavBarItem(
+                'assets/Icon/today_word.png',
+                '오늘단어',
+                () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => FlashCardStartScreen()))),
+            _buildNavBarItem(
+                'assets/Icon/mynote.png',
+                '단어장',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => MyNoteScreen()))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavBarItem(String iconPath, String label, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            iconPath,
+            width: 24,
+            height: 24,
+            color: label == '단어목록'
+                ? Color(0xFF1E3859)
+                : Color(0xFF1E3859).withOpacity(0.5),
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: label == '단어목록'
+                  ? Color(0xFF1E3859)
+                  : Color(0xFF1E3859).withOpacity(0.5),
+              fontSize: 12,
+            ),
+          ),
         ],
-        onTap: (index) {
-          if (index != 3) {
-            Widget screen;
-            switch (index) {
-              case 0:
-                screen = MainScreen();
-                break;
-              case 1:
-                screen = SearchScreen();
-                break;
-              case 2:
-                screen = FlashCardStartScreen();
-                break;
-              default:
-                return;
-            }
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => screen),
-              (Route<dynamic> route) => false,
-            );
-          }
-        },
       ),
     );
   }
@@ -378,12 +388,12 @@ class CustomExpansionTile extends StatelessWidget {
               word,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF5D4777),
+                color: Color(0xFF1E3859),
               ),
             ),
             trailing: Icon(
               isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Color(0xFF8A7FBA),
+              color: Color(0xFF1E3859),
             ),
             onTap: () => onExpansionChanged(!isExpanded),
           ),
@@ -393,7 +403,7 @@ class CustomExpansionTile extends StatelessWidget {
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Text(
                 definition,
-                style: TextStyle(fontSize: 14, color: Color(0xFF6A5495)),
+                style: TextStyle(fontSize: 14, color: Color(0xFF1E3859)),
               ),
             ),
         ],

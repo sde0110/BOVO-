@@ -64,6 +64,21 @@ class WordDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              if (word['example1']?.isNotEmpty ?? false)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '예문 1:',
+                      style: TextStyle(fontSize: 18, color: Color(0xFF5D4777)),
+                    ),
+                    Text(
+                      word['example1'] ?? '',
+                      style: TextStyle(fontSize: 18, color: Color(0xFF5D4777)),
+                    ),
+                  ],
+                ),
+              // 예문 2도 유사한 구조
             ],
           ),
         ),

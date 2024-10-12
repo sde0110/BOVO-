@@ -27,7 +27,7 @@ class ResultScreen extends StatelessWidget {
                 // 네비게이션 스택에서 루트 경로('/')까지 모든 화면을 제거하고 메인 화면으로 이동
                 Navigator.popUntil(context, ModalRoute.withName('/'));
               },
-              child: const Text('메인 화면으로'),
+              child: const Text('홈화면으로'),
             ),
           ],
         ),

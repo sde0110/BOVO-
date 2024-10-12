@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Column(
                   children: [
                     Text(
-                      '사회초년생들을 위한',
+                      '사회초년생을 위한',
                       style: TextStyle(
                         fontSize: 25,
                         fontWeight: FontWeight.bold,

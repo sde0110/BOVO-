@@ -4,6 +4,7 @@ import 'search_screen.dart';
 import 'word_list_screen.dart';
 import 'main_screen.dart';
 import '../word_data.dart';
+import 'mynote_screen.dart';
 
 // FlashCardStartScreen: 플래시 카드 학습을 시작하는 화면
 class FlashCardStartScreen extends StatefulWidget {
@@ -13,12 +14,12 @@ class FlashCardStartScreen extends StatefulWidget {
 
 class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
   List<Map<String, String>> todaysWords = [];
-  // 카테고리 정보 (이름과 아이콘)
+  // 카테고리 정보 (이름과 아이콘 경로)
   List<Map<String, dynamic>> categories = [
-    {'name': '주택', 'icon': Icons.home},
-    {'name': '아르바이트', 'icon': Icons.work},
-    {'name': '전자기기', 'icon': Icons.devices},
-    {'name': '여행', 'icon': Icons.flight},
+    {'name': '주택', 'icon': 'assets/Icon/jutaek.png'},
+    {'name': '아르바이트', 'icon': 'assets/Icon/alba.png'},
+    {'name': '전자기기', 'icon': 'assets/Icon/junja.png'},
+    {'name': '여행', 'icon': 'assets/Icon/yuhang.png'},
   ];
 
   @override
@@ -38,40 +39,48 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('오늘 단어', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF8A7FBA),
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.white),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: Container(
-        color: Color(0xFFF0F0FF),
+      backgroundColor: Color(0xFF1E3859),
+      body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 안내 메시지
             Padding(
-              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-              child: Text(
-                '오늘의 단어를 학습해 보세요!',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => MainScreen()),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
-            // 카테고리 그리드
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+              child: Text(
+                '원하는 카테고리를 선택해 학습을 시작하세요.',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            SizedBox(width: 8),
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
-                childAspectRatio: 1.2,
+                childAspectRatio: 1.0,
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 padding: EdgeInsets.all(16),
                 children: categories
-                    .map((category) => _buildCategoryCard(context,
-                        category['icon'], category['name'], category['name']))
+                    .map((category) => _buildCategoryCard(
+                        context, category['icon'], category['name']))
                     .toList(),
               ),
             ),
@@ -79,53 +88,58 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
         ),
       ),
       // 하단 네비게이션 바
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Color(0xFF8A7FBA),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Color(0xFFD5D1EE),
-        currentIndex: 2,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: '단어찾기'),
-          BottomNavigationBarItem(icon: Icon(Icons.flash_on), label: '오늘단어'),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: '단어목록'),
-        ],
-        onTap: (index) {
-          if (index != 2) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) {
-                  switch (index) {
-                    case 0:
-                      return MainScreen();
-                    case 1:
-                      return SearchScreen();
-                    case 3:
-                      return WordListScreen();
-                    default:
-                      return FlashCardStartScreen();
-                  }
-                },
-              ),
-            );
-          }
-        },
+      bottomNavigationBar: Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF1E3859).withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: Offset(0, -3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildNavBarItem(
+                'assets/Icon/home.png',
+                '홈',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => MainScreen()))),
+            _buildNavBarItem(
+                'assets/Icon/search_navi.png',
+                '검색',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => SearchScreen()))),
+            _buildNavBarItem(
+                'assets/Icon/word_list.png',
+                '단어목록',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => WordListScreen()))),
+            _buildNavBarItem('assets/Icon/today_word.png', '오늘단어', null),
+            _buildNavBarItem(
+                'assets/Icon/mynote.png',
+                '단어장',
+                () => Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => MyNoteScreen()))),
+          ],
+        ),
       ),
     );
   }
 
   // 카테고리 카드 위젯 생성
   Widget _buildCategoryCard(
-      BuildContext context, IconData icon, String label, String category) {
+      BuildContext context, String iconPath, String label) {
     return GestureDetector(
       onTap: () {
-        // 카테고리 선택 시 해당 카테고리의 플래시 카드 화면으로 이동
         Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (context) => FlashCardScreen(category: category)),
+              builder: (context) => FlashCardScreen(category: label)),
         );
       },
       child: Card(
@@ -137,19 +151,57 @@ class _FlashCardStartScreenState extends State<FlashCardStartScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48, color: Color(0xFF8A7FBA)),
+            Image.asset(
+              iconPath,
+              width: 64,
+              height: 64,
+              color: Color(0xFF1E3859),
+              errorBuilder: (context, error, stackTrace) {
+                print('Error loading image: $error');
+                return Icon(Icons.error, size: 64, color: Color(0xFF1E3859));
+              },
+            ),
             SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF8A7FBA),
+                color: Color(0xFF1E3859),
               ),
               textAlign: TextAlign.center,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildNavBarItem(String iconPath, String label, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            iconPath,
+            width: 24,
+            height: 24,
+            color: label == '오늘단어'
+                ? Color(0xFF1E3859)
+                : Color(0xFF1E3859).withOpacity(0.5),
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: label == '오늘단어'
+                  ? Color(0xFF1E3859)
+                  : Color(0xFF1E3859).withOpacity(0.5),
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

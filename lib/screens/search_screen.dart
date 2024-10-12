@@ -5,6 +5,7 @@ import 'main_screen.dart';
 import 'word_detail_screen.dart';
 import 'flash_card_start_screen.dart';
 import 'word_list_screen.dart';
+import 'mynote_screen.dart';
 
 // SearchScreen: 단어 검색 기능을 제공하는 화면
 class SearchScreen extends StatefulWidget {
@@ -20,6 +21,8 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Map<String, dynamic>> _filteredWords = [];
   List<String> _recentSearches = [];
   bool _isSearching = false;
+
+  final Color primaryColor = Color(0xFF1E3859);
 
   @override
   void initState() {
@@ -74,12 +77,7 @@ class _SearchScreenState extends State<SearchScreen> {
   // 검색 결과 위젯 생성
   Widget _buildSearchResults() {
     if (_filteredWords.isEmpty) {
-      return Center(
-        child: Text(
-          '검색 결과가 없습니다.',
-          style: TextStyle(fontSize: 16, color: Color(0xFF5D4777)),
-        ),
-      );
+      return SizedBox();
     }
     return ListView.builder(
       itemCount: _filteredWords.length,
@@ -88,22 +86,42 @@ class _SearchScreenState extends State<SearchScreen> {
         final wordText = word['word']!;
         final query = _searchController.text.toLowerCase();
 
-        return ListTile(
-          title: RichText(
-            text: TextSpan(
-              style: TextStyle(color: Color(0xFF5D4777), fontSize: 16),
-              children: _buildTextSpans(wordText, query),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: primaryColor),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListTile(
+              title: RichText(
+                text: TextSpan(
+                  style: TextStyle(color: primaryColor, fontSize: 16),
+                  children: _buildTextSpans(wordText, query),
+                ),
+              ),
+              trailing:
+                  Icon(Icons.arrow_forward_ios, color: primaryColor, size: 18),
+              onTap: () {
+                _saveRecentSearch(wordText);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WordDetailScreen(word: word),
+                  ),
+                );
+              },
             ),
           ),
-          onTap: () {
-            _saveRecentSearch(wordText);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => WordDetailScreen(word: word),
-              ),
-            );
-          },
         );
       },
     );
@@ -120,7 +138,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
       spans.add(TextSpan(
         text: text.substring(match.start, match.end),
-        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF8A7FBA)),
+        style: TextStyle(fontWeight: FontWeight.bold, color: primaryColor),
       ));
       start = match.end;
     }
@@ -137,13 +155,35 @@ class _SearchScreenState extends State<SearchScreen> {
         : ListView.builder(
             itemCount: _recentSearches.length,
             itemBuilder: (context, index) {
-              return ListTile(
-                leading: Icon(Icons.history),
-                title: Text(_recentSearches[index]),
-                onTap: () {
-                  _searchController.text = _recentSearches[index];
-                  _filterSearchResults(_recentSearches[index]);
-                },
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: primaryColor),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ListTile(
+                    leading: Icon(Icons.history, color: primaryColor),
+                    title: Text(_recentSearches[index],
+                        style: TextStyle(color: primaryColor)),
+                    trailing: Icon(Icons.arrow_forward_ios,
+                        color: primaryColor, size: 18),
+                    onTap: () {
+                      _searchController.text = _recentSearches[index];
+                      _filterSearchResults(_recentSearches[index]);
+                    },
+                  ),
+                ),
               );
             },
           );
@@ -152,18 +192,9 @@ class _SearchScreenState extends State<SearchScreen> {
   // 로고 섹션 위젯 생성
   Widget _buildLogoSection() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'BOVO',
-            style: TextStyle(
-              fontSize: 72,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF8A7FBA),
-            ),
-          ),
-        ],
+      child: Image.asset(
+        'assets/Icon/logo.png',
+        width: MediaQuery.of(context).size.width * 0.7, // 로고 크기 조절
       ),
     );
   }
@@ -179,114 +210,139 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _clearSearch();
-        return true;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              _clearSearch();
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => MainScreen()),
-                (Route<dynamic> route) => false,
-              );
-            },
-          ),
-          title: const Text('단어 찾기', style: TextStyle(color: Colors.white)),
-          backgroundColor: Color(0xFF8A7FBA),
-          elevation: 0,
-        ),
-        body: Container(
-          color: Color(0xFFF0F0FF),
-          child: Column(
-            children: [
-              // 검색 입력 필드
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: '검색어를 입력하세요',
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      borderSide: BorderSide.none,
-                    ),
-                    suffixIcon: IconButton(
-                      icon: Icon(Icons.search, color: Color(0xFF8A7FBA)),
-                      onPressed: () {
-                        _filterSearchResults(_searchController.text);
-                      },
-                    ),
-                  ),
-                  onChanged: _filterSearchResults,
-                  onSubmitted: (value) {
-                    _filterSearchResults(value);
-                  },
-                ),
-              ),
-              // 최근 검색어가 없을 때 메시지 표시
-              if (_recentSearches.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    '최근 검색어가 없습니다.',
-                    style: TextStyle(
-                      color: Color(0xFF5D4777),
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              // 검색 결과 또는 최근 검색어 목록 표시
-              Expanded(
-                child: _isSearching
-                    ? _buildSearchResults()
-                    : _buildRecentSearches(),
-              ),
-            ],
-          ),
-        ),
-        // 하단 네비게이션 바
-        bottomNavigationBar: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Color(0xFF8A7FBA),
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Color(0xFFD5D1EE),
-          currentIndex: 1,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: '단어찾기'),
-            BottomNavigationBarItem(icon: Icon(Icons.flash_on), label: '오늘단어'),
-            BottomNavigationBarItem(icon: Icon(Icons.book), label: '단어목록'),
-          ],
-          onTap: (index) {
-            if (index != 1) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) {
-                    switch (index) {
-                      case 0:
-                        return MainScreen();
-                      case 2:
-                        return FlashCardStartScreen();
-                      case 3:
-                        return WordListScreen();
-                      default:
-                        return SearchScreen();
-                    }
-                  },
-                ),
-              );
-            }
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: primaryColor),
+          onPressed: () {
+            Navigator.of(context).pop();
           },
         ),
+        title: Text(''),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: '검색어를 입력하세요',
+                hintStyle: TextStyle(color: primaryColor.withOpacity(0.6)),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: primaryColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: primaryColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
+                ),
+                prefixIcon: Icon(Icons.search, color: primaryColor),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.clear, color: primaryColor),
+                  onPressed: _clearSearch,
+                ),
+              ),
+              style: TextStyle(color: primaryColor),
+              onChanged: _filterSearchResults,
+              onSubmitted: (value) {
+                _filterSearchResults(value);
+              },
+            ),
+          ),
+          if (_isSearching && _filteredWords.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                '검색 결과가 없습니다.',
+                style: TextStyle(fontSize: 16, color: primaryColor),
+              ),
+            ),
+          Expanded(
+            child: _isSearching ? _buildSearchResults() : _buildLogoSection(),
+          ),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    return Container(
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: Offset(0, -3),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavBarItem(
+              'assets/Icon/home.png',
+              '홈',
+              () => Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => MainScreen()))),
+          _buildNavBarItem('assets/Icon/search_navi.png', '검색', null),
+          _buildNavBarItem(
+              'assets/Icon/word_list.png',
+              '단어목록',
+              () => Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => WordListScreen()))),
+          _buildNavBarItem(
+              'assets/Icon/today_word.png',
+              '오늘단어',
+              () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => FlashCardStartScreen()))),
+          _buildNavBarItem(
+              'assets/Icon/mynote.png',
+              '단어장',
+              () => Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => MyNoteScreen()))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavBarItem(String iconPath, String label, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            iconPath,
+            width: 24,
+            height: 24,
+            color: label == '검색' ? primaryColor : primaryColor.withOpacity(0.5),
+          ),
+          SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color:
+                  label == '검색' ? primaryColor : primaryColor.withOpacity(0.5),
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

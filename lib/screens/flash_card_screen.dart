@@ -12,7 +12,8 @@ class FlashCardScreen extends StatefulWidget {
   _FlashCardScreenState createState() => _FlashCardScreenState();
 }
 
-class _FlashCardScreenState extends State<FlashCardScreen> {
+class _FlashCardScreenState extends State<FlashCardScreen>
+    with TickerProviderStateMixin {
   List<Map<String, String>> categoryWords = [];
   List<Map<String, String>> quizWords = [];
   List<Map<String, String>> originalQuizWords = []; // 원래 선택된 10개 단어 저장
@@ -29,13 +30,47 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
   String displayedMeaning = '';
   List<Map<String, String>> currentWordSet = []; // 현재 학습 중인 단어 세트
 
-  final Color primaryColor = Color(0xFF9575CD);
-  final Color accentColor = Color(0xFFD1C4E9);
+  late AnimationController _scaleController;
+  late AnimationController _fadeController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+  late AnimationController _definitionFadeController;
+  late Animation<double> _definitionFadeAnimation;
+
+  final Color backgroundColor = Color(0xFF1E3859);
+  final Color textColor = Colors.white;
+  final Color accentColor = Color(0xFFF0F4F8);
+  final Color correctColor = Color.fromARGB(142, 172, 255, 174);
+  final Color incorrectColor = Color.fromARGB(168, 255, 181, 176);
 
   @override
   void initState() {
     super.initState();
     _loadWords();
+    _scaleController = AnimationController(
+        duration: const Duration(milliseconds: 500), vsync: this);
+    _fadeController = AnimationController(
+        duration: const Duration(milliseconds: 300), vsync: this);
+    _scaleAnimation =
+        CurvedAnimation(parent: _scaleController, curve: Curves.elasticOut);
+    _fadeAnimation =
+        CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
+    _definitionFadeController = AnimationController(
+      duration: const Duration(milliseconds: 100), // 빠른 페이드 아웃을 위해 시간 단축
+      vsync: this,
+    );
+    _definitionFadeAnimation = CurvedAnimation(
+      parent: _definitionFadeController,
+      curve: Curves.easeOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scaleController.dispose();
+    _fadeController.dispose();
+    _definitionFadeController.dispose();
+    super.dispose();
   }
 
   // 단어 데이터 로드 및 초기화
@@ -65,33 +100,37 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
 
   // 다음 카드로 이동
   void _nextCard() {
-    setState(() {
-      if (currentIndex < quizWords.length - 1) {
-        currentIndex++;
-        showDefinition = false;
-        if (isQuizMode) {
-          isAnswered = false;
-          _shuffleWordAndMeaning();
-        }
-      } else {
-        if (isQuizMode) {
-          _showQuizResult();
+    _definitionFadeController.reverse().then((_) {
+      setState(() {
+        if (currentIndex < quizWords.length - 1) {
+          currentIndex++;
+          showDefinition = false;
+          if (isQuizMode) {
+            isAnswered = false;
+            _shuffleWordAndMeaning();
+          }
         } else {
-          _showCompletionScreen();
+          if (isQuizMode) {
+            _showQuizResult();
+          } else {
+            _showCompletionScreen();
+          }
         }
-      }
+      });
     });
   }
 
   // 이전 카드로 이동
   void _previousCard() {
-    setState(() {
-      if (currentIndex > 0) {
-        currentIndex--;
-      } else {
-        currentIndex = 0;
-      }
-      showDefinition = false;
+    _definitionFadeController.reverse().then((_) {
+      setState(() {
+        if (currentIndex > 0) {
+          currentIndex--;
+        } else {
+          currentIndex = 0;
+        }
+        showDefinition = false;
+      });
     });
   }
 
@@ -99,6 +138,11 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
   void _toggleDefinition() {
     setState(() {
       showDefinition = !showDefinition;
+      if (showDefinition) {
+        _definitionFadeController.forward();
+      } else {
+        _definitionFadeController.reverse();
+      }
     });
   }
 
@@ -121,9 +165,8 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                 child: Text('다시 학습하기'),
                 style: ButtonStyle(
                   backgroundColor:
-                      MaterialStateProperty.all<Color>(primaryColor),
-                  foregroundColor:
-                      MaterialStateProperty.all<Color>(Colors.white),
+                      MaterialStateProperty.all<Color>(backgroundColor),
+                  foregroundColor: MaterialStateProperty.all<Color>(textColor),
                   padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
                     EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
@@ -138,9 +181,8 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                 child: Text('퀴즈 시작하기'),
                 style: ButtonStyle(
                   backgroundColor:
-                      MaterialStateProperty.all<Color>(primaryColor),
-                  foregroundColor:
-                      MaterialStateProperty.all<Color>(Colors.white),
+                      MaterialStateProperty.all<Color>(backgroundColor),
+                  foregroundColor: MaterialStateProperty.all<Color>(textColor),
                   padding: MaterialStateProperty.all<EdgeInsetsGeometry>(
                     EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
@@ -207,7 +249,81 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
         incorrectAnswers.add(quizWords[currentIndex]);
       }
 
-      Future.delayed(Duration(milliseconds: 500), _nextCard);
+      _showResultPopup();
+    });
+  }
+
+  void _showResultPopup() {
+    _scaleController.reset();
+    _fadeController.reset();
+    _scaleController.forward();
+    _fadeController.forward();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 250,
+            height: 250,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                ScaleTransition(
+                  scale: _scaleAnimation,
+                  child: Container(
+                    width: 200,
+                    height: 200,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isCorrect ? correctColor : incorrectColor,
+                    ),
+                  ),
+                ),
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Icon(
+                    isCorrect ? Icons.check : Icons.close,
+                    color: Colors.white,
+                    size: 120,
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isCorrect
+                            ? correctColor.withOpacity(0.8)
+                            : incorrectColor.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        isCorrect ? '+10점' : '+0점',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    Future.delayed(Duration(milliseconds: 1500), () {
+      Navigator.of(context).pop();
+      _nextCard();
     });
   }
 
@@ -218,7 +334,10 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('퀴즈 결과', style: TextStyle(fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.white,
+          title: Text('퀴즈 결과',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: backgroundColor)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -230,7 +349,7 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                     style: TextStyle(
                         fontSize: 72,
                         fontWeight: FontWeight.bold,
-                        color: primaryColor)),
+                        color: backgroundColor)),
                 SizedBox(height: 20),
                 Text(
                   score <= 40
@@ -243,22 +362,30 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
                   style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: primaryColor),
+                      color: backgroundColor),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: 20),
                 if (incorrectAnswers.isNotEmpty) ...[
                   Text('오답 리스트',
-                      style:
-                          TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: backgroundColor)),
                   SizedBox(height: 10),
                   ...incorrectAnswers
                       .map((word) => Card(
+                            color: Colors.white,
+                            elevation: 2,
+                            margin: EdgeInsets.symmetric(vertical: 4),
                             child: ListTile(
                               title: Text(word['word']!,
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text(word['definition']!),
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: backgroundColor)),
+                              subtitle: Text(word['definition']!,
+                                  style: TextStyle(
+                                      color: backgroundColor.withOpacity(0.7))),
                             ),
                           ))
                       .toList(),
@@ -267,12 +394,51 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              child: Text('단어학습 다시하기'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _resetToLearningMode();
-              },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: ElevatedButton(
+                      child: Text('오답노트 확인하기',
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            backgroundColor, // primary를 backgroundColor로 변경
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        // 오답노트 확인 로직 구현
+                        Navigator.of(context).pop();
+                        // 오답노트 화면으로 이동하는 코드 추가
+                      },
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: ElevatedButton(
+                      child: Text('단어학습 다시하기',
+                          style: TextStyle(color: Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            backgroundColor, // primary를 backgroundColor로 변경
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _resetToLearningMode();
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -295,175 +461,242 @@ class _FlashCardScreenState extends State<FlashCardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        _loadWords();
-        return true;
-      },
-      child: Scaffold(
-        backgroundColor: accentColor,
-        appBar: AppBar(
-          title: Text('#${widget.category}'),
-          backgroundColor: primaryColor,
-          actions: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: Text('#${widget.category}',
+            style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
+        actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16.0),
               child: Text(
                 '${currentIndex + 1} / ${quizWords.length}',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textColor),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (!isQuizMode) ...[
+                _buildFlashCard(),
+                SizedBox(height: 40),
+                _buildNavigationButtons(),
+              ] else if (!isAnswered) ...[
+                _buildQuizCard(),
+                SizedBox(height: 40),
+                _buildQuizButtons(),
+              ] else ...[
+                _buildResultCard(),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFlashCard() {
+    return GestureDetector(
+      onTap: _toggleDefinition,
+      child: Container(
+        height: MediaQuery.of(context).size.height * 0.6,
+        decoration: BoxDecoration(
+          color: textColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      quizWords[currentIndex]['word'] ?? '',
+                      style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: backgroundColor),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: 20),
+                    FadeTransition(
+                      opacity: _definitionFadeAnimation,
+                      child: Text(
+                        quizWords[currentIndex]['definition'] ?? '',
+                        style: TextStyle(
+                            fontSize: 22,
+                            color: backgroundColor.withOpacity(0.8)),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            if (!showDefinition)
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Text(
+                    '탭하여 뜻 보기',
+                    style: TextStyle(
+                        color: backgroundColor.withOpacity(0.5), fontSize: 16),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavigationButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildIconButton(Icons.arrow_back, () {
+          if (currentIndex > 0) {
+            _previousCard();
+          }
+        }),
+        _buildIconButton(Icons.arrow_forward, _nextCard),
+      ],
+    );
+  }
+
+  Widget _buildQuizCard() {
+    return Container(
+      width: double.infinity, // 화면 너비 전체를 사용
+      height: MediaQuery.of(context).size.height * 0.6, // 높이는 화면의 60%로 고정
+      decoration: BoxDecoration(
+        color: textColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              displayedWord,
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.bold,
+                color: backgroundColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Expanded(
+              // 남은 공간을 모두 차지하도록 Expanded 위젯 사용
+              child: Center(
+                // 뜻을 중앙에 배치
+                child: Text(
+                  displayedMeaning,
+                  style: TextStyle(
+                    fontSize: 22,
+                    color: backgroundColor.withOpacity(0.8),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ],
         ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // 학습 모드 UI
-                if (!isQuizMode) ...[
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _toggleDefinition,
-                      child: Card(
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          padding: EdgeInsets.all(20),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  quizWords[currentIndex]['word'] ?? '',
-                                  style: TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold),
-                                  textAlign: TextAlign.center,
-                                ),
-                                SizedBox(height: 20),
-                                if (showDefinition)
-                                  Text(
-                                    quizWords[currentIndex]['definition'] ?? '',
-                                    style: TextStyle(fontSize: 24),
-                                    textAlign: TextAlign.center,
-                                  )
-                                else
-                                  Text(
-                                    '터치하여 뜻 보기',
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.grey),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ]
-                // 퀴즈 모드 UI (답변 전)
-                else if (!isAnswered) ...[
-                  Text(
-                    displayedWord,
-                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      displayedMeaning,
-                      style: TextStyle(fontSize: 24),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  SizedBox(height: 40),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _checkAnswer(true),
-                        child: Text('O', style: TextStyle(fontSize: 36)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: CircleBorder(),
-                          padding: EdgeInsets.all(24),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () => _checkAnswer(false),
-                        child: Text('X', style: TextStyle(fontSize: 36)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: CircleBorder(),
-                          padding: EdgeInsets.all(24),
-                        ),
-                      ),
-                    ],
-                  ),
-                ]
-                // 퀴즈 모드 UI (답변 후)
-                else ...[
-                  Text(
-                    isCorrect ? '정답입니다!' : '오답입니다!',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: isCorrect ? Colors.green : Colors.red,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                SizedBox(height: 20),
-                if (!isQuizMode)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            currentIndex = 0;
-                            showDefinition = false;
-                          });
-                        },
-                        child: Icon(Icons.arrow_back),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: CircleBorder(),
-                          padding: EdgeInsets.all(16),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: _nextCard,
-                        child: Icon(Icons.arrow_forward),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: CircleBorder(),
-                          padding: EdgeInsets.all(16),
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
+      ),
+    );
+  }
+
+  Widget _buildQuizButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0), // 좌우 패딩 추가
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween, // 버튼을 양쪽 끝으로 정렬
+        children: [
+          _buildAnswerButton('O', () => _checkAnswer(true)),
+          _buildAnswerButton('X', () => _checkAnswer(false)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultCard() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.6,
+      decoration: BoxDecoration(
+        color: accentColor,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: backgroundColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 5),
           ),
-        ),
+        ],
+      ),
+      child: Center(),
+    );
+  }
+
+  Widget _buildIconButton(IconData icon, VoidCallback onPressed) {
+    return Container(
+      decoration: BoxDecoration(
+        color: textColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: backgroundColor, size: 32),
+        onPressed: onPressed,
+      ),
+    );
+  }
+
+  Widget _buildAnswerButton(String text, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      child: Text(text, style: TextStyle(fontSize: 24, color: backgroundColor)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: textColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+        minimumSize: Size(120, 60), // 버튼의 최소 크기 설정
       ),
     );
   }
