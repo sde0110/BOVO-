@@ -37,6 +37,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   shared_preferences: ^2.0.0
   google_fonts: ^4.0.3
+  flutter_launcher_icons: ^0.14.1
 
 dev_dependencies:
   flutter_test:
@@ -98,3 +99,8 @@ flutter:
     - family: Bovo
       fonts:
         - asset: assets/Icon/bovo_font.ttf
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/Icon/logo.png"
